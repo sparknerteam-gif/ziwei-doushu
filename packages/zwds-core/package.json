@@ -1,0 +1,30 @@
+{
+  "name": "@zwds/core",
+  "version": "0.1.0",
+  "description": "Ziwei Doushu (Purple Star Astrology) calculation engine — pure TypeScript, zero UI dependencies",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "iztro": "^1.3.0",
+    "luxon": "^3.7.2"
+  },
+  "devDependencies": {
+    "@types/luxon": "^3.7.3",
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0"
+  }
+}
