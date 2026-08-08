@@ -3,5 +3,8 @@ dist
 .next
 .turbo
 *.tsbuildinfo
+# AI communication channel (local only)
+.ai_comm/
+
 .env
 .env.local

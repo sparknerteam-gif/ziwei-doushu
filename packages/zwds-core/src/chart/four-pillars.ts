@@ -41,7 +41,6 @@ export function calculateFourPillars(input: FourPillarsInput): FourPillars {
   const yearBranch = getYearBranch(lunarYear);
 
   // Month pillar — based on solar terms (節氣)
-  // Simplified: we use the date to approximate which solar-term month we're in
   const solarMonthIdx = getSolarMonthForPillar(year, month, day);
   const monthStem = getMonthStem(yearStem, solarMonthIdx);
   const monthBranch = getMonthBranch(solarMonthIdx);
@@ -64,34 +63,43 @@ export function calculateFourPillars(input: FourPillarsInput): FourPillars {
 
 /**
  * Determine solar month index (1=寅, 2=卯, ..., 12=丑).
- * Each solar month begins at a specific 節氣 (solar term).
- * We use approximate dates (±1 day accuracy).
+ *
+ * Each zodiac month is defined by a 節氣 (solar term), NOT by the
+ * Gregorian calendar month. The term is the boundary:
+ *
+ *   Before this month's term → still in previous zodiac month.
+ *   On or after this month's term → enter this zodiac month.
+ *
+ * Example: Gregorian July 11 is after 小暑 (Jul ~7) but before
+ * 立秋 (Aug ~8), so it's 未月 (solar month 6), NOT 申月 (7).
  */
-function getSolarMonthForPillar(year: number, month: number, day: number): number {
-  // Approximate solar term start dates (day of month)
-  // Values are middle-of-range approximations
-  const termStarts: Record<number, number> = {
-    1: 6,   // 小寒 ~Jan 6 → 丑月 (12)
-    2: 4,   // 立春 ~Feb 4 → 寅月 (1)
-    3: 6,   // 驚蟄 ~Mar 6 → 卯月 (2)
-    4: 5,   // 清明 ~Apr 5 → 辰月 (3)
-    5: 6,   // 立夏 ~May 6 → 巳月 (4)
-    6: 6,   // 芒種 ~Jun 6 → 午月 (5)
-    7: 7,   // 小暑 ~Jul 7 → 未月 (6)
-    8: 8,   // 立秋 ~Aug 8 → 申月 (7)
-    9: 8,   // 白露 ~Sep 8 → 酉月 (8)
-    10: 8,  // 寒露 ~Oct 8 → 戌月 (9)
-    11: 7,  // 立冬 ~Nov 7 → 亥月 (10)
-    12: 7,  // 大雪 ~Dec 7 → 子月 (11)
+function getSolarMonthForPillar(_year: number, month: number, day: number): number {
+  // Each entry maps a Gregorian month to: { termDay, solarMonth }
+  // solarMonth: 1=寅, 2=卯, ... 12=丑
+  const termStarts: Record<number, { day: number; solarMonth: number }> = {
+    1: { day: 6, solarMonth: 12 },   // 小寒 ~Jan 6 → 丑月
+    2: { day: 4, solarMonth: 1 },    // 立春 ~Feb 4 → 寅月
+    3: { day: 6, solarMonth: 2 },    // 驚蟄 ~Mar 6 → 卯月
+    4: { day: 5, solarMonth: 3 },    // 清明 ~Apr 5 → 辰月
+    5: { day: 6, solarMonth: 4 },    // 立夏 ~May 6 → 巳月
+    6: { day: 6, solarMonth: 5 },    // 芒種 ~Jun 6 → 午月
+    7: { day: 7, solarMonth: 6 },    // 小暑 ~Jul 7 → 未月
+    8: { day: 8, solarMonth: 7 },    // 立秋 ~Aug 8 → 申月
+    9: { day: 8, solarMonth: 8 },    // 白露 ~Sep 8 → 酉月
+    10: { day: 8, solarMonth: 9 },   // 寒露 ~Oct 8 → 戌月
+    11: { day: 7, solarMonth: 10 },  // 立冬 ~Nov 7 → 亥月
+    12: { day: 7, solarMonth: 11 },  // 大雪 ~Dec 7 → 子月
   };
 
-  // Check if day is before or after the term start
-  const termDay = termStarts[month] ?? 7;
-  if (day < termDay) {
-    // Use previous solar month
-    return month === 1 ? 12 : ((month - 1) % 12);
+  const entry = termStarts[month];
+  if (!entry) return month;
+
+  if (day >= entry.day) {
+    return entry.solarMonth;
   }
-  return month;
+  // Before this month's term → still in previous solar month
+  const prev = termStarts[month === 1 ? 12 : month - 1];
+  return prev ? prev.solarMonth : (month - 1 || 12);
 }
 
 /**

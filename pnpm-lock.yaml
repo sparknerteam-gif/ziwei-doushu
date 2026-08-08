@@ -14,7 +14,7 @@ importers:
         specifier: ^1.7.0
         version: 1.7.0(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@zwds/core':
-        specifier: workspace:*
+        specifier: file:../../packages/zwds-core
         version: link:../../packages/zwds-core
       class-variance-authority:
         specifier: ^0.7.1

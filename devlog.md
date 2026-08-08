@@ -1,4 +1,4 @@
-# 紫微斗數 Web App — 開發全記錄 (Phase 1-2 完成)
+# 紫微斗數 Web App — 開發全記錄 (Phase 1-3 完成)
 
 ## 專案概述
 
@@ -1069,6 +1069,44 @@ cd ..\..\apps\web
 pnpm dev
 # → http://localhost:3000
 ```
+
+---
+
+## Phase 3: Vercel 部署 (2026-08-08)
+
+### 部署 URL
+
+- **Production**: [https://web-nine-zeta-27.vercel.app/](https://web-nine-zeta-27.vercel.app/)
+
+### 部署方式
+
+- 平台：Vercel (sparknerteam-1307 team)
+- 連接 GitHub repo → Vercel 自動 detect Next.js project
+- 因為係 monorepo，需要手動設定 build command
+
+### Vercel Project 設定
+
+| Field | Value |
+|---|---|
+| **Framework** | Next.js |
+| **Root Directory** | `apps/web` |
+| **Build Command** | `cd ../.. && pnpm i --no-frozen-lockfile && cd packages/zwds-core && pnpm build && cd ../../apps/web && npm install && next build` |
+| **Install Command** | `npm install -g pnpm@9 && pnpm install --no-frozen-lockfile` |
+| **Output Directory** | `.next` |
+| **Node.js Version** | `24.x` |
+
+### 相關檔案
+
+- `DEPLOY.md` — 詳細部署步驟指南
+- `.github/copilot-instructions.md` — GitHub Copilot 專案設定
+
+### 部署筆記
+
+- 因為 monorepo workspace package 問題，CLI deploy 唔 work，要用 Vercel Dashboard 手動設定
+- 需要先 build `@zwds/core`，再 build `apps/web`
+- `pnpm-lock.yaml` 要 commit 上去確保依賴一致
+
+---
 
 ---
 
