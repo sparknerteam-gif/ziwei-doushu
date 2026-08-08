@@ -8,4 +8,5 @@ node_modules
 .env
 .env.local
 # pnpm lockfile at root — Vercel uses apps/web/package-lock.json (npm)
-pnpm-lock.yaml
+pnpm-lock.yamlSnipaste_*.png
+*.pdf
