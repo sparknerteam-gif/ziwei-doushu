@@ -17,7 +17,30 @@
       "Bash(curl -s http://localhost:3001)",
       "Bash(taskkill //F //IM \"node.exe\")",
       "Bash(curl -s -o NUL -w \"%{http_code}\" http://localhost:3000)",
-      "Bash(curl -s -o NUL -w \"HTTP %{http_code}\" http://localhost:3000)"
+      "Bash(curl -s -o NUL -w \"HTTP %{http_code}\" http://localhost:3000)",
+      "Bash(rm -rf apps/web/.git)",
+      "Bash(git add *)",
+      "Bash(vercel --version)",
+      "Bash(vercel --yes --prod)",
+      "Bash(vercel login *)",
+      "Bash(vercel --prod)",
+      "Bash(vercel link *)",
+      "Bash(vercel)",
+      "Bash(vercel --cwd .)",
+      "Bash(vercel logs *)",
+      "Bash(vercel inspect *)",
+      "Bash(vercel --cwd apps/web)",
+      "Bash(vercel build *)",
+      "Bash(vercel pull *)",
+      "Bash(rm vercel.json)",
+      "Bash(rm .vercel/BUILD_COMMAND.txt)",
+      "Bash(pnpm build *)",
+      "Bash(rm -rf .vercel .env.local)",
+      "Bash(npm i *)",
+      "Bash(npm start *)",
+      "Bash(rm -rf .next)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o NUL -w \"HTTP %{http_code}\" http://localhost:3001)"
     ]
   }
 }
