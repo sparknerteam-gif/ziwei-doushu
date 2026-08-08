@@ -1,5 +1,4 @@
 node_modules
-dist
 .next
 .turbo
 *.tsbuildinfo
@@ -8,3 +7,5 @@ dist
 
 .env
 .env.local
+# pnpm lockfile at root — Vercel uses apps/web/package-lock.json (npm)
+pnpm-lock.yaml
