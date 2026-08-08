@@ -6,6 +6,5 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "clean": "turbo clean"
-  },
-  "packageManager": "pnpm@9.0.0"
+  }
 }
