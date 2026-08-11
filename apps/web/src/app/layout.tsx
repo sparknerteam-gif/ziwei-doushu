@@ -42,12 +42,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               >
                 Form
               </Link>
-              <Link
-                href="/dashboard"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Dashboard
-              </Link>
             </div>
           </div>
         </nav>
