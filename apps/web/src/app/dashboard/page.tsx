@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface Submission {
   submittedAt: string;
@@ -41,7 +43,6 @@ const ACCURACY_LABELS: Record<string, string> = {
   unknown: "Unknown",
 };
 
-/** Deduplicate and merge local cache with server submissions by submittedAt + email */
 function mergeSubmissions(local: Submission[], server: Submission[]): Submission[] {
   const seen = new Set<string>();
   const merged: Submission[] = [];
@@ -54,56 +55,89 @@ function mergeSubmissions(local: Submission[], server: Submission[]): Submission
     }
   }
 
-  // Sort newest first
   merged.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
   return merged;
 }
 
 export default function DashboardPage() {
+  const [password, setPassword] = useState("");
+  const [authenticated, setAuthenticated] = useState(false);
+  const [authError, setAuthError] = useState("");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [total, setTotal] = useState(0);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [copied, setCopied] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  const fetchSubmissions = async () => {
+  // Check for saved password on mount
+  useEffect(() => {
+    const saved = sessionStorage.getItem("kismet-dash-pw");
+    if (saved) {
+      setPassword(saved);
+      fetchSubmissions(saved);
+    }
+  }, []);
+
+  const fetchSubmissions = async (pw?: string) => {
+    const pwd = pw || password;
+    if (!pwd) return;
+
+    setLoading(true);
     try {
-      // ── First, check localStorage for any client-side cached submissions ──
       const cachedRaw = localStorage.getItem("kismet-local-submissions");
       const cached: Submission[] = cachedRaw ? JSON.parse(cachedRaw) : [];
 
-      // API key is public for reading — the GET endpoint is a simple key gate for MVP
-      const res = await fetch("/api/submit-form?key=kismet-admin-2026");
-      if (!res.ok) throw new Error("Failed");
-      const data = await res.json();
+      // Send password in Authorization header — never appears in URL
+      const res = await fetch("/api/submit-form?action=list", {
+        headers: {
+          Authorization: `Bearer ${pwd}`,
+        },
+      });
 
-      // Merge server submissions with any local-only cached ones
+      if (res.status === 401) {
+        setAuthError("Incorrect password");
+        sessionStorage.removeItem("kismet-dash-pw");
+        setAuthenticated(false);
+        setLoading(false);
+        return;
+      }
+
+      if (!res.ok) throw new Error("Failed");
+
+      const data = await res.json();
       const serverSubs: Submission[] = data.submissions || [];
       const merged = mergeSubmissions(cached, serverSubs);
       setSubmissions(merged);
       setTotal(merged.length);
+      setAuthenticated(true);
+      setAuthError("");
+      sessionStorage.setItem("kismet-dash-pw", pwd);
     } catch (err) {
       console.error("Fetch error:", err);
-      // Fall back to localStorage if the API is unreachable
       const cachedRaw = localStorage.getItem("kismet-local-submissions");
       if (cachedRaw) {
         const cached: Submission[] = JSON.parse(cachedRaw);
         setSubmissions(cached);
         setTotal(cached.length);
+        setAuthenticated(true);
       }
     } finally {
       setLoading(false);
     }
   };
 
+  // Poll every 60 seconds
   useEffect(() => {
-    fetchSubmissions();
-    // Poll every 60 seconds
-    const interval = setInterval(fetchSubmissions, 60000);
+    if (!authenticated) return;
+    const interval = setInterval(() => fetchSubmissions(), 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [authenticated, password]);
 
-  // Build a Claude-ready calibration prompt for this lead
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchSubmissions();
+  };
+
   const buildCalibrationPrompt = (s: Submission) => {
     const parts = [
       "Calibrate this lead:\n",
@@ -140,7 +174,54 @@ export default function DashboardPage() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  if (loading) {
+  // ── PASSWORD GATE ──
+  if (!authenticated) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+          <div className="max-w-4xl mx-auto px-4 py-3">
+            <h1 className="text-xl font-semibold tracking-tight">✦ Kismet Dashboard</h1>
+          </div>
+        </header>
+        <main className="max-w-md mx-auto px-4 py-16">
+          <div className="text-center mb-8">
+            <div className="text-5xl mb-4">🔐</div>
+            <h2 className="text-xl font-semibold mb-2">Dashboard Access</h2>
+            <p className="text-sm text-muted-foreground">
+              Enter the dashboard password to view submissions.
+            </p>
+          </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setAuthError("");
+                }}
+                placeholder="Enter dashboard password"
+                autoFocus
+              />
+            </div>
+            {authError && (
+              <p className="text-sm text-destructive bg-destructive/5 rounded-lg p-3">
+                ⚠ {authError}
+              </p>
+            )}
+            <Button type="submit" className="w-full" size="lg" disabled={!password || loading}>
+              {loading ? "Checking..." : "Unlock Dashboard"}
+            </Button>
+          </form>
+        </main>
+      </div>
+    );
+  }
+
+  // ── LOADING ──
+  if (loading && submissions.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -158,6 +239,7 @@ export default function DashboardPage() {
     );
   }
 
+  // ── EMPTY ──
   if (submissions.length === 0) {
     return (
       <div className="min-h-screen bg-background">
@@ -174,7 +256,7 @@ export default function DashboardPage() {
           <p className="text-sm text-muted-foreground mt-2">
             When someone fills the form, they&apos;ll appear here.
           </p>
-          <Button variant="outline" className="mt-4" onClick={fetchSubmissions}>
+          <Button variant="outline" className="mt-4" onClick={() => fetchSubmissions()}>
             Refresh
           </Button>
         </main>
@@ -182,6 +264,7 @@ export default function DashboardPage() {
     );
   }
 
+  // ── DATA ──
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -192,7 +275,7 @@ export default function DashboardPage() {
               {total} submission{total !== 1 ? "s" : ""}
             </Badge>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchSubmissions}>
+          <Button variant="outline" size="sm" onClick={() => fetchSubmissions()}>
             Refresh
           </Button>
         </div>
@@ -204,7 +287,7 @@ export default function DashboardPage() {
             key={idx}
             className="border rounded-lg bg-card overflow-hidden transition-colors"
           >
-            {/* Summary Row — always visible */}
+            {/* Summary Row */}
             <button
               onClick={() => setExpanded(expanded === idx ? null : idx)}
               className="w-full text-left px-5 py-4 hover:bg-muted/30 transition-colors"
@@ -240,7 +323,6 @@ export default function DashboardPage() {
             {/* Expanded Detail */}
             {expanded === idx && (
               <div className="px-5 pb-5 border-t pt-4 space-y-4">
-                {/* Key info grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">DOB</span>
@@ -272,7 +354,6 @@ export default function DashboardPage() {
 
                 <Separator />
 
-                {/* Life Event */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Life Event</p>
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{s.lifeEvent1}</p>
@@ -314,7 +395,6 @@ export default function DashboardPage() {
                   </>
                 )}
 
-                {/* Actions */}
                 <div className="flex gap-3 pt-2">
                   <Button
                     size="sm"
@@ -323,14 +403,6 @@ export default function DashboardPage() {
                   >
                     {copied === idx ? "✓ Copied!" : "📋 Copy for Claude"}
                   </Button>
-                  <a
-                    href={`https://web-nine-zeta-27.vercel.app/api/submit-form?key=kismet-admin-2026`}
-                    target="_blank"
-                    rel="noopener"
-                    className="text-xs text-muted-foreground hover:text-foreground self-center"
-                  >
-                    Raw JSON ↗
-                  </a>
                 </div>
               </div>
             )}

@@ -210,20 +210,41 @@ export async function POST(request: Request) {
   }
 }
 
-// ── GET — view submissions (protected by key for MVP) ──
+// ── Password check ──
+function checkPassword(request: Request): boolean {
+  // Read from Authorization: Bearer <password>
+  const auth = request.headers.get("Authorization");
+  if (!auth || !auth.startsWith("Bearer ")) return false;
+  const password = auth.slice(7);
+
+  // Check against env var (must be set in Vercel)
+  const expected = process.env.DASHBOARD_PASSWORD;
+  if (!expected) {
+    console.error("DASHBOARD_PASSWORD env var is not set!");
+    return false;
+  }
+  return password === expected;
+}
+
+// ── GET — view submissions (password-protected) ──
+// Usage: GET /api/submit-form?action=list  with  Authorization: Bearer <password>
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
-    const key = url.searchParams.get("key");
 
-    if (key !== "kismet-admin-2026") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // ── One-time setup: create the submissions table ──
+    // ── One-time setup: create the submissions table (uses old key for compat) ──
     if (url.searchParams.get("action") === "setup") {
+      const key = url.searchParams.get("key");
+      if (key !== "kismet-admin-2026") {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
       const result = await setupTable();
       return NextResponse.json(result);
+    }
+
+    // ── List submissions (requires password) ──
+    if (!checkPassword(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     let submissions: Record<string, unknown>[] = [];
