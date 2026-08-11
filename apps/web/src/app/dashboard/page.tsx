@@ -140,16 +140,17 @@ export default function DashboardPage() {
 
   const buildCalibrationPrompt = (s: Submission) => {
     const parts = [
-      "Calibrate this lead:\n",
-      `--- Birth Data ---`,
+      "calibrate this lead",
+      "",
+      "--- Birth Data ---",
       `DOB: ${s.birthDate}`,
       `City: ${s.birthCity}`,
       `Time Accuracy: ${s.birthTimeAccuracy}`,
       `Exact Time: ${s.exactBirthTime || "n/a"}`,
       `Part of Day: ${s.partOfDay || "n/a"}`,
       `Gender: ${s.gender}`,
-      ``,
-      `--- Life Event ---`,
+      "",
+      "--- Life Event ---",
       s.lifeEvent1,
     ];
     if (s.lifeEvent2) parts.push(`\nEvent 2: ${s.lifeEvent2}`);
@@ -172,6 +173,81 @@ export default function DashboardPage() {
     await navigator.clipboard.writeText(buildCalibrationPrompt(s));
     setCopied(idx);
     setTimeout(() => setCopied(null), 2000);
+  };
+
+  const downloadLeadFile = (s: Submission) => {
+    const content = buildLeadFile(s);
+    const blob = new Blob([content], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const name = (s.socialHandle || "lead").replace(/[^a-zA-Z0-9_-]/g, "_");
+    const date = s.submittedAt?.slice(0, 10) || "unknown";
+    a.href = url;
+    a.download = `${date}_${name}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const buildLeadFile = (s: Submission) => {
+    const parts = [
+      `# Lead: ${s.socialHandle || "Unknown"}`,
+      `> Submitted: ${s.submittedAt}`,
+      "",
+      "---",
+      "",
+      "## 📋 Raw Data",
+      "",
+      "| Field | Value |",
+      "|---|---|",
+      `| DOB | ${s.birthDate} |`,
+      `| City | ${s.birthCity} |`,
+      `| Time Accuracy | ${s.birthTimeAccuracy} |`,
+      `| Exact Time | ${s.exactBirthTime || "n/a"} |`,
+      `| Part of Day | ${s.partOfDay || "n/a"} |`,
+      `| Gender | ${s.gender} |`,
+      `| Email | ${s.email} |`,
+      `| Social | ${s.socialHandle} |`,
+      `| Interest | ${s.interestArea} |`,
+      `| MBTI | ${s.mbti || "n/a"} |`,
+      `| Siblings | ${s.siblings || "n/a"} |`,
+      `| Physical | ${s.physical || "n/a"} |`,
+      "",
+      "---",
+      "",
+      "## 🔮 Calibration Prompt",
+      "",
+      "Paste the block below into Claude (kismet-engine):",
+      "",
+      "```",
+      buildCalibrationPrompt(s),
+      "```",
+      "",
+      "---",
+      "",
+      "## 📖 Reading Output",
+      "",
+      "*(Paste Claude's calibration report + DM script here)*",
+      "",
+      "### Internal Calibration Report",
+      "",
+      "*(for Hugo's eyes only)*",
+      "",
+      "### DM Script",
+      "",
+      "*(copy-paste to lead)*",
+      "",
+      "---",
+      "",
+      "## 📨 Follow-up Log",
+      "",
+      "| Date | Action | Notes |",
+      "|---|---|---|",
+      "| | DM Sent | |",
+      "| | Reply Received | |",
+      "| | Reading Delivered | |",
+      "| | Paid Consultation | |",
+    ];
+    return parts.join("\n");
   };
 
   // ── PASSWORD GATE ──
@@ -401,7 +477,14 @@ export default function DashboardPage() {
                     onClick={() => copyToClipboard(s, idx)}
                     variant={copied === idx ? "default" : "outline"}
                   >
-                    {copied === idx ? "✓ Copied!" : "📋 Copy for Claude"}
+                    {copied === idx ? "✓ Copied!" : "📋 Copy Prompt"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => downloadLeadFile(s)}
+                    variant="outline"
+                  >
+                    💾 Save Lead File
                   </Button>
                 </div>
               </div>
