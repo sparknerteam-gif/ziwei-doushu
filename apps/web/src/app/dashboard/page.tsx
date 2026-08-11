@@ -1,0 +1,342 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+
+interface Submission {
+  submittedAt: string;
+  birthDate: string;
+  birthCity: string;
+  birthTimeAccuracy: string;
+  exactBirthTime: string | null;
+  partOfDay: string | null;
+  gender: string;
+  lifeEvent1: string;
+  lifeEvent2: string | null;
+  lifeEvent3: string | null;
+  email: string;
+  socialHandle: string;
+  interestArea: string;
+  siblings: string | null;
+  physical: string | null;
+  mbti: string | null;
+  anythingElse: string | null;
+}
+
+const INTEREST_LABELS: Record<string, string> = {
+  career: "💼 Career",
+  love: "💕 Love",
+  wealth: "💰 Wealth",
+  family: "🏠 Family",
+  health: "🧬 Health",
+  full: "🌐 Full Picture",
+};
+
+const ACCURACY_LABELS: Record<string, string> = {
+  exact: "Exact",
+  approximate: "Approx",
+  part: "Part of day",
+  unknown: "Unknown",
+};
+
+/** Deduplicate and merge local cache with server submissions by submittedAt + email */
+function mergeSubmissions(local: Submission[], server: Submission[]): Submission[] {
+  const seen = new Set<string>();
+  const merged: Submission[] = [];
+
+  for (const s of [...server, ...local]) {
+    const key = `${s.submittedAt}|${s.email}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      merged.push(s);
+    }
+  }
+
+  // Sort newest first
+  merged.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+  return merged;
+}
+
+export default function DashboardPage() {
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [total, setTotal] = useState(0);
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const [copied, setCopied] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchSubmissions = async () => {
+    try {
+      // ── First, check localStorage for any client-side cached submissions ──
+      const cachedRaw = localStorage.getItem("kismet-local-submissions");
+      const cached: Submission[] = cachedRaw ? JSON.parse(cachedRaw) : [];
+
+      // API key is public for reading — the GET endpoint is a simple key gate for MVP
+      const res = await fetch("/api/submit-form?key=kismet-admin-2026");
+      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+
+      // Merge server submissions with any local-only cached ones
+      const serverSubs: Submission[] = data.submissions || [];
+      const merged = mergeSubmissions(cached, serverSubs);
+      setSubmissions(merged);
+      setTotal(merged.length);
+    } catch (err) {
+      console.error("Fetch error:", err);
+      // Fall back to localStorage if the API is unreachable
+      const cachedRaw = localStorage.getItem("kismet-local-submissions");
+      if (cachedRaw) {
+        const cached: Submission[] = JSON.parse(cachedRaw);
+        setSubmissions(cached);
+        setTotal(cached.length);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSubmissions();
+    // Poll every 60 seconds
+    const interval = setInterval(fetchSubmissions, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Build a Claude-ready calibration prompt for this lead
+  const buildCalibrationPrompt = (s: Submission) => {
+    const parts = [
+      "Calibrate this lead:\n",
+      `--- Birth Data ---`,
+      `DOB: ${s.birthDate}`,
+      `City: ${s.birthCity}`,
+      `Time Accuracy: ${s.birthTimeAccuracy}`,
+      `Exact Time: ${s.exactBirthTime || "n/a"}`,
+      `Part of Day: ${s.partOfDay || "n/a"}`,
+      `Gender: ${s.gender}`,
+      ``,
+      `--- Life Event ---`,
+      s.lifeEvent1,
+    ];
+    if (s.lifeEvent2) parts.push(`\nEvent 2: ${s.lifeEvent2}`);
+    if (s.lifeEvent3) parts.push(`\nEvent 3: ${s.lifeEvent3}`);
+    parts.push(
+      ``,
+      `--- Contact ---`,
+      `Email: ${s.email}`,
+      `Social: ${s.socialHandle}`,
+      `Interest: ${s.interestArea}`,
+    );
+    if (s.siblings) parts.push(`\nSiblings: ${s.siblings}`);
+    if (s.physical) parts.push(`\nPhysical: ${s.physical}`);
+    if (s.mbti) parts.push(`\nMBTI: ${s.mbti}`);
+    if (s.anythingElse) parts.push(`\nOther: ${s.anythingElse}`);
+    return parts.join("\n");
+  };
+
+  const copyToClipboard = async (s: Submission, idx: number) => {
+    await navigator.clipboard.writeText(buildCalibrationPrompt(s));
+    setCopied(idx);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-semibold tracking-tight">✦ Kismet Dashboard</h1>
+            </div>
+          </div>
+        </header>
+        <main className="max-w-4xl mx-auto px-4 py-16 text-center">
+          <div className="animate-spin inline-block w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full mb-4" />
+          <p className="text-lg text-muted-foreground">Loading submissions...</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (submissions.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-semibold tracking-tight">✦ Kismet Dashboard</h1>
+            </div>
+          </div>
+        </header>
+        <main className="max-w-4xl mx-auto px-4 py-16 text-center">
+          <div className="text-6xl mb-4">📭</div>
+          <p className="text-lg text-muted-foreground">No submissions yet.</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            When someone fills the form, they&apos;ll appear here.
+          </p>
+          <Button variant="outline" className="mt-4" onClick={fetchSubmissions}>
+            Refresh
+          </Button>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-semibold tracking-tight">✦ Kismet Dashboard</h1>
+            <Badge variant="secondary" className="text-xs">
+              {total} submission{total !== 1 ? "s" : ""}
+            </Badge>
+          </div>
+          <Button variant="outline" size="sm" onClick={fetchSubmissions}>
+            Refresh
+          </Button>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto px-4 py-6 space-y-4">
+        {submissions.map((s, idx) => (
+          <div
+            key={idx}
+            className="border rounded-lg bg-card overflow-hidden transition-colors"
+          >
+            {/* Summary Row — always visible */}
+            <button
+              onClick={() => setExpanded(expanded === idx ? null : idx)}
+              className="w-full text-left px-5 py-4 hover:bg-muted/30 transition-colors"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-lg shrink-0">
+                    {INTEREST_LABELS[s.interestArea] || s.interestArea}
+                  </span>
+                  <span className="text-sm text-muted-foreground truncate">
+                    {s.socialHandle}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(s.submittedAt).toLocaleString("en-HK", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <Badge variant="outline" className="text-xs">
+                    {ACCURACY_LABELS[s.birthTimeAccuracy] || s.birthTimeAccuracy}
+                  </Badge>
+                  <span className="text-muted-foreground text-sm">
+                    {expanded === idx ? "▲" : "▼"}
+                  </span>
+                </div>
+              </div>
+            </button>
+
+            {/* Expanded Detail */}
+            {expanded === idx && (
+              <div className="px-5 pb-5 border-t pt-4 space-y-4">
+                {/* Key info grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">DOB</span>
+                    <p className="font-medium">{s.birthDate || "—"}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">City</span>
+                    <p className="font-medium truncate" title={s.birthCity}>{s.birthCity || "—"}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Time</span>
+                    <p className="font-medium">
+                      {s.exactBirthTime || s.partOfDay || s.birthTimeAccuracy}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Gender</span>
+                    <p className="font-medium">{s.gender}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Email</span>
+                    <p className="font-medium truncate" title={s.email}>{s.email}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">MBTI</span>
+                    <p className="font-medium">{s.mbti || "Unknown"}</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Life Event */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Life Event</p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{s.lifeEvent1}</p>
+                  {s.lifeEvent2 && (
+                    <p className="text-sm leading-relaxed mt-2 text-muted-foreground whitespace-pre-wrap">
+                      <strong>Event 2:</strong> {s.lifeEvent2}
+                    </p>
+                  )}
+                  {s.lifeEvent3 && (
+                    <p className="text-sm leading-relaxed mt-2 text-muted-foreground whitespace-pre-wrap">
+                      <strong>Event 3:</strong> {s.lifeEvent3}
+                    </p>
+                  )}
+                </div>
+
+                {(s.siblings || s.physical || s.anythingElse) && (
+                  <>
+                    <Separator />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      {s.siblings && (
+                        <div>
+                          <span className="text-muted-foreground">Siblings</span>
+                          <p className="font-medium">{s.siblings}</p>
+                        </div>
+                      )}
+                      {s.physical && (
+                        <div>
+                          <span className="text-muted-foreground">Physical</span>
+                          <p className="font-medium">{s.physical}</p>
+                        </div>
+                      )}
+                    </div>
+                    {s.anythingElse && (
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Other</span>
+                        <p className="leading-relaxed mt-1">{s.anythingElse}</p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    size="sm"
+                    onClick={() => copyToClipboard(s, idx)}
+                    variant={copied === idx ? "default" : "outline"}
+                  >
+                    {copied === idx ? "✓ Copied!" : "📋 Copy for Claude"}
+                  </Button>
+                  <a
+                    href={`https://web-nine-zeta-27.vercel.app/api/submit-form?key=kismet-admin-2026`}
+                    target="_blank"
+                    rel="noopener"
+                    className="text-xs text-muted-foreground hover:text-foreground self-center"
+                  >
+                    Raw JSON ↗
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </main>
+    </div>
+  );
+}
