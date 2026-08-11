@@ -18,6 +18,106 @@ function getSupabase() {
   );
 }
 
+// ── One-time table setup ──
+// Call: GET /api/submit-form?key=kismet-admin-2026&action=setup
+async function setupTable(): Promise<{ success: boolean; message: string }> {
+  if (!hasSupabase()) {
+    return { success: false, message: "SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set" };
+  }
+
+  const supabase = getSupabase();
+
+  // Use Supabase's raw SQL execution via the REST API
+  // The service_role key allows DDL operations
+  const response = await fetch(
+    `${process.env.SUPABASE_URL}/rest/v1/`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+        Prefer: "return=minimal",
+      },
+    }
+  );
+
+  // Try inserting a test row to check if table exists, then create it
+  const sql = `
+    CREATE TABLE IF NOT EXISTS submissions (
+      id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+      submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      birth_date TEXT DEFAULT '',
+      birth_city TEXT DEFAULT '',
+      birth_time_accuracy TEXT DEFAULT '',
+      exact_birth_time TEXT,
+      part_of_day TEXT,
+      gender TEXT DEFAULT '',
+      life_event1 TEXT DEFAULT '',
+      life_event2 TEXT,
+      life_event3 TEXT,
+      email TEXT DEFAULT '',
+      social_handle TEXT DEFAULT '',
+      interest_area TEXT DEFAULT '',
+      siblings TEXT,
+      physical TEXT,
+      mbti TEXT,
+      anything_else TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `;
+
+  try {
+    // Use pg extension for raw SQL — Supabase exposes this via the REST API
+    const res = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/rpc/exec_sql`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        },
+        body: JSON.stringify({ query: sql }),
+      }
+    );
+
+    if (res.ok) {
+      return { success: true, message: "Table 'submissions' is ready" };
+    }
+
+    // exec_sql RPC might not exist — try the direct approach
+    // Create table by inserting a test row (Supabase auto-creates the table)
+    const { error } = await supabase.from("submissions").insert({
+      submitted_at: new Date().toISOString(),
+      birth_date: "_setup_",
+      birth_city: "_setup_",
+      birth_time_accuracy: "_setup_",
+      gender: "_setup_",
+      life_event1: "_setup_",
+      email: "_setup_",
+      social_handle: "_setup_",
+      interest_area: "_setup_",
+    });
+
+    if (error && error.message.includes("does not exist")) {
+      return {
+        success: false,
+        message: `Table does not exist. Please run the SQL in Supabase dashboard: ${process.env.SUPABASE_URL?.replace(".supabase.co", ".supabase.com/dashboard/project/default/sql/new")}. SQL: ${sql}`,
+      };
+    }
+
+    // Clean up the test row if insert succeeded
+    if (!error) {
+      await supabase.from("submissions").delete().eq("email", "_setup_");
+      return { success: true, message: "Table 'submissions' auto-created and ready" };
+    }
+
+    return { success: false, message: `Unexpected error: ${error.message}` };
+  } catch (err) {
+    return { success: false, message: `Setup failed: ${err instanceof Error ? err.message : String(err)}` };
+  }
+}
+
 // ── POST — submit form data ──
 export async function POST(request: Request) {
   try {
@@ -118,6 +218,12 @@ export async function GET(request: Request) {
 
     if (key !== "kismet-admin-2026") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // ── One-time setup: create the submissions table ──
+    if (url.searchParams.get("action") === "setup") {
+      const result = await setupTable();
+      return NextResponse.json(result);
     }
 
     let submissions: Record<string, unknown>[] = [];
