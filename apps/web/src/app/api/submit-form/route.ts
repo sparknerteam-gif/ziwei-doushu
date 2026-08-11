@@ -1,83 +1,62 @@
 import { NextResponse } from "next/server";
-import { put, list, del } from "@vercel/blob";
+import { Pool } from "pg";
 
-// ── Storage ──
-// Primary: In-memory (fast, always works while instance is warm)
-// Persistent: Vercel Blob (survives cold starts — requires BLOB_READ_WRITE_TOKEN env var)
-// Fallback: localStorage on the client (set by form page on successful submit)
+// ── PostgreSQL connection pool ──
+// Uses Supabase Postgres (POSTGRES_URL from Vercel env, auto-added by Supabase integration)
+// Falls back to in-memory storage when POSTGRES_URL is not available
 
-const BLOB_PREFIX = "kismet-submissions/";
-const BLOB_KEY = "kismet-submissions/data.json";
+let pool: Pool | null = null;
 
+function getPool(): Pool {
+  if (!pool && process.env.POSTGRES_URL) {
+    pool = new Pool({
+      connectionString: process.env.POSTGRES_URL,
+      max: 3, // Keep connection pool small for serverless
+      idleTimeoutMillis: 30000,
+    });
+    console.log("✓ PostgreSQL pool created (Supabase)");
+  }
+  return pool!;
+}
+
+// ── In-memory fallback ──
 const memoryStore: Record<string, unknown>[] = [];
 
-// ── Blob helpers ──
-
-function hasBlob(): boolean {
-  return !!process.env.BLOB_READ_WRITE_TOKEN;
+function hasDb(): boolean {
+  return !!process.env.POSTGRES_URL;
 }
 
-async function readFromBlob(): Promise<Record<string, unknown>[]> {
-  if (!hasBlob()) return [];
-  try {
-    const { blobs } = await list({ prefix: BLOB_PREFIX });
-    if (blobs.length === 0) return [];
-    // Find the latest data blob
-    const dataBlob = blobs
-      .filter((b) => b.pathname.endsWith(".json"))
-      .sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime())[0];
-    if (!dataBlob) return [];
-    const res = await fetch(dataBlob.url);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return Array.isArray(data) ? data : [];
-  } catch {
-    return [];
-  }
-}
+// ── Ensure table exists ──
+let tableReady = false;
 
-async function writeToBlob(submissions: Record<string, unknown>[]): Promise<void> {
-  if (!hasBlob()) return;
-  try {
-    // Clean up old blobs (keep storage tidy)
-    const { blobs } = await list({ prefix: BLOB_PREFIX });
-    if (blobs.length > 5) {
-      // Delete oldest blobs, keep the 5 most recent
-      const toDelete = blobs
-        .sort((a, b) => a.uploadedAt.getTime() - b.uploadedAt.getTime())
-        .slice(0, blobs.length - 5);
-      await Promise.all(toDelete.map((b) => del(b.url)));
-    }
-    // Write new blob with timestamp to avoid collisions
-    const key = `kismet-submissions/data-${Date.now()}.json`;
-    await put(key, JSON.stringify(submissions), {
-      access: "private",
-      contentType: "application/json",
-    });
-    console.log(`✓ Blob saved: ${key} (${submissions.length} submissions)`);
-  } catch (err) {
-    console.error("✗ Blob write failed:", err);
-  }
-}
-
-// ── Cold-start recovery ──
-// Called once per instance lifecycle — restores from Blob into memory
-let restorePromise: Promise<void> | null = null;
-
-async function restoreFromBlob(): Promise<void> {
-  if (memoryStore.length > 0) return; // Already have data
-  if (restorePromise) return restorePromise; // Already restoring
-
-  restorePromise = (async () => {
-    const blobData = await readFromBlob();
-    if (blobData.length > 0) {
-      memoryStore.push(...blobData);
-      console.log(`✓ Restored ${blobData.length} submissions from Blob`);
-    }
-    restorePromise = null;
-  })();
-
-  return restorePromise;
+async function ensureTable(): Promise<void> {
+  if (tableReady || !hasDb()) return;
+  const p = getPool();
+  await p.query(`
+    CREATE TABLE IF NOT EXISTS submissions (
+      id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+      submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      birth_date TEXT DEFAULT '',
+      birth_city TEXT DEFAULT '',
+      birth_time_accuracy TEXT DEFAULT '',
+      exact_birth_time TEXT,
+      part_of_day TEXT,
+      gender TEXT DEFAULT '',
+      life_event1 TEXT DEFAULT '',
+      life_event2 TEXT,
+      life_event3 TEXT,
+      email TEXT DEFAULT '',
+      social_handle TEXT DEFAULT '',
+      interest_area TEXT DEFAULT '',
+      siblings TEXT,
+      physical TEXT,
+      mbti TEXT,
+      anything_else TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  tableReady = true;
+  console.log("✓ PostgreSQL submissions table ready");
 }
 
 // ── POST — submit form data ──
@@ -106,15 +85,7 @@ export async function POST(request: Request) {
       anythingElse: body.anythingElse || null,
     };
 
-    // Store in-memory (primary)
-    memoryStore.push(submission);
-
-    // Persist to Blob (async, non-blocking)
-    writeToBlob(memoryStore).catch((err) =>
-      console.error("Blob persist failed:", err)
-    );
-
-    // Console log (visible in Vercel Logs — always works as backup)
+    // Console log (always works as backup)
     console.log("═══════════════════════════════════════");
     console.log("📥 NEW KISMET FORM SUBMISSION");
     console.log("═══════════════════════════════════════");
@@ -123,30 +94,44 @@ export async function POST(request: Request) {
     console.log("Social:", submission.socialHandle);
     console.log("Interest:", submission.interestArea);
     console.log("---");
-    console.log(
-      "DOB:",
-      submission.birthDate,
-      "| City:",
-      submission.birthCity
-    );
-    console.log(
-      "Time:",
-      submission.birthTimeAccuracy,
-      "| Exact:",
-      submission.exactBirthTime || "n/a",
-      "| Part:",
-      submission.partOfDay || "n/a"
-    );
+    console.log("DOB:", submission.birthDate, "| City:", submission.birthCity);
+    console.log("Time:", submission.birthTimeAccuracy, "| Exact:", submission.exactBirthTime || "n/a");
     console.log("Gender:", submission.gender);
     console.log("---");
-    console.log(
-      "Event:",
-      (submission.lifeEvent1 as string).substring(0, 100) + "..."
-    );
+    console.log("Event:", (submission.lifeEvent1 as string).substring(0, 100) + "...");
     console.log("MBTI:", submission.mbti || "n/a");
-    console.log("Siblings:", submission.siblings || "n/a");
-    console.log("Physical:", submission.physical || "n/a");
     console.log("═══════════════════════════════════════\n");
+
+    if (hasDb()) {
+      await ensureTable();
+      const p = getPool();
+      await p.query(
+        `INSERT INTO submissions (
+          submitted_at, birth_date, birth_city, birth_time_accuracy,
+          exact_birth_time, part_of_day, gender,
+          life_event1, life_event2, life_event3,
+          email, social_handle, interest_area,
+          siblings, physical, mbti, anything_else
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7,
+          $8, $9, $10,
+          $11, $12, $13,
+          $14, $15, $16, $17
+        )`,
+        [
+          submission.submittedAt, submission.birthDate, submission.birthCity, submission.birthTimeAccuracy,
+          submission.exactBirthTime, submission.partOfDay, submission.gender,
+          submission.lifeEvent1, submission.lifeEvent2, submission.lifeEvent3,
+          submission.email, submission.socialHandle, submission.interestArea,
+          submission.siblings, submission.physical, submission.mbti, submission.anythingElse,
+        ]
+      );
+      console.log("✓ Saved to Supabase PostgreSQL");
+    } else {
+      // Fallback to in-memory
+      memoryStore.push(submission);
+      console.log("⚠ Saved to memory only (no POSTGRES_URL)");
+    }
 
     return NextResponse.json({ success: true, submission });
   } catch (err) {
@@ -158,8 +143,7 @@ export async function POST(request: Request) {
   }
 }
 
-// ── GET — view submissions (protected by simple key for MVP) ──
-// Usage: /api/submit-form?key=kismet-admin-2026
+// ── GET — view submissions (protected by key for MVP) ──
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
@@ -169,22 +153,56 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Restore from Blob if memory is empty (cold start)
-    await restoreFromBlob();
+    let submissions: Record<string, unknown>[] = [];
+    let storage = "memory";
 
-    // Return submissions (most recent first, last 50)
+    if (hasDb()) {
+      await ensureTable();
+      const p = getPool();
+      const result = await p.query(
+        `SELECT * FROM submissions ORDER BY submitted_at DESC LIMIT 50`
+      );
+      submissions = result.rows.map((row) => ({
+        submittedAt: row.submitted_at,
+        birthDate: row.birth_date,
+        birthCity: row.birth_city,
+        birthTimeAccuracy: row.birth_time_accuracy,
+        exactBirthTime: row.exact_birth_time,
+        partOfDay: row.part_of_day,
+        gender: row.gender,
+        lifeEvent1: row.life_event1,
+        lifeEvent2: row.life_event2,
+        lifeEvent3: row.life_event3,
+        email: row.email,
+        socialHandle: row.social_handle,
+        interestArea: row.interest_area,
+        siblings: row.siblings,
+        physical: row.physical,
+        mbti: row.mbti,
+        anythingElse: row.anything_else,
+      }));
+      storage = "supabase";
+    } else {
+      // Fallback to in-memory
+      submissions = [...memoryStore].reverse().slice(0, 50);
+    }
+
+    // Get total count
+    let total = submissions.length;
+    if (hasDb()) {
+      const result = await getPool().query(`SELECT COUNT(*) FROM submissions`);
+      total = parseInt(result.rows[0].count, 10);
+    }
+
+    return NextResponse.json({ total, submissions, storage });
+  } catch (err) {
+    console.error("Error reading submissions:", err);
+    // Fall back to in-memory on error
     const recent = [...memoryStore].reverse().slice(0, 50);
-
     return NextResponse.json({
       total: memoryStore.length,
       submissions: recent,
-      storage: hasBlob() ? "blob" : "memory",
+      storage: "memory",
     });
-  } catch (err) {
-    console.error("Error reading submissions:", err);
-    return NextResponse.json(
-      { error: "Failed to read submissions" },
-      { status: 500 }
-    );
   }
 }
