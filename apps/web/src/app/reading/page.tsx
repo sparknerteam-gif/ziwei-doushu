@@ -449,10 +449,76 @@ export default function ReadingPage() {
             <div>
               <h3 className="font-semibold">📋 Life Events for Calibration</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                <strong>Minimum 2 events required.</strong> Each event must have ALL 4 fields filled.
-                More events = more accurate calibration. Be specific — vague answers can't narrow down your birth time.
+                <strong>Minimum 2 events required.</strong> Each event fills ALL 4 fields.
+                More events = exponentially more accurate calibration.
               </p>
             </div>
+
+            {/* Examples guide */}
+            <details className="bg-background border rounded-lg p-4 text-sm">
+              <summary className="font-medium cursor-pointer">📖 What makes a good event? (Click to expand examples)</summary>
+              <div className="mt-3 space-y-4">
+                <div>
+                  <p className="font-medium text-green-600 dark:text-green-400 mb-2">✅ GOOD events (specific, dated, extreme, irreversible):</p>
+                  <div className="space-y-3">
+                    <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded p-3">
+                      <p className="font-medium">💸 Wealth Loss</p>
+                      <p className="text-muted-foreground"><strong>WHAT:</strong> I lost 90% of my savings (~$40K USD) in cryptocurrency futures trading</p>
+                      <p className="text-muted-foreground"><strong>WHEN:</strong> 2023 November</p>
+                      <p className="text-muted-foreground"><strong>CAUSE:</strong> Over-leveraged trades during the FTX crash, margin called</p>
+                      <p className="text-muted-foreground"><strong>IMPACT:</strong> Had to move back in with parents. Took 18 months to recover financially and psychologically. Completely changed my risk tolerance — I no longer touch leverage.</p>
+                    </div>
+                    <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded p-3">
+                      <p className="font-medium">🏥 Health Crisis</p>
+                      <p className="text-muted-foreground"><strong>WHAT:</strong> Hospitalized for 7 days with severe viral infection (EBV/mononucleosis)</p>
+                      <p className="text-muted-foreground"><strong>WHEN:</strong> 2026 May</p>
+                      <p className="text-muted-foreground"><strong>CAUSE:</strong> Chronic stress + immune system collapse from overwork</p>
+                      <p className="text-muted-foreground"><strong>IMPACT:</strong> Forced to stop working for 3 months. Lost 5kg. Made me completely rethink my relationship with work and stress.</p>
+                    </div>
+                    <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded p-3">
+                      <p className="font-medium">🏠 Major Relocation</p>
+                      <p className="text-muted-foreground"><strong>WHAT:</strong> Moved to a new city for a job, then moved back to my hometown 12 months later</p>
+                      <p className="text-muted-foreground"><strong>WHEN:</strong> 2024 March (moved out), 2025 March (moved back)</p>
+                      <p className="text-muted-foreground"><strong>CAUSE:</strong> Job offer seemed perfect but the work culture was toxic and isolating</p>
+                      <p className="text-muted-foreground"><strong>IMPACT:</strong> Realized environment matters more than salary. Became much more careful about evaluating workplaces.</p>
+                    </div>
+                    <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded p-3">
+                      <p className="font-medium">💔 Relationship Breakup</p>
+                      <p className="text-muted-foreground"><strong>WHAT:</strong> Ended a 2-year serious relationship — we were discussing marriage</p>
+                      <p className="text-muted-foreground"><strong>WHEN:</strong> 2024 September</p>
+                      <p className="text-muted-foreground"><strong>CAUSE:</strong> Fundamental value mismatch that became impossible to ignore</p>
+                      <p className="text-muted-foreground"><strong>IMPACT:</strong> Spent 6 months in deep introspection. Changed what I look for in a partner — from chemistry to character alignment.</p>
+                    </div>
+                    <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded p-3">
+                      <p className="font-medium">🎓 Career/Edu Pivot</p>
+                      <p className="text-muted-foreground"><strong>WHAT:</strong> Dropped out of university in 2nd year to start a business, then the business failed</p>
+                      <p className="text-muted-foreground"><strong>WHEN:</strong> 2022 September (dropped out), 2023 June (business failed)</p>
+                      <p className="text-muted-foreground"><strong>CAUSE:</strong> Believed the degree was useless, overestimated my ability to execute solo</p>
+                      <p className="text-muted-foreground"><strong>IMPACT:</strong> Went back to finish degree in 2024. Humbled me. Now I test ideas part-time before going all-in.</p>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <p className="font-medium text-red-600 dark:text-red-400 mb-2">❌ BAD events (vague, undated, trivial, no impact):</p>
+                  <ul className="space-y-1 text-muted-foreground">
+                    <li>• "I had money problems" → Too vague. How much? When? Why?</li>
+                    <li>• "I was sick once" → What illness? How long? What year?</li>
+                    <li>• "My parents argued a lot" → No specific event, no date, no impact on you</li>
+                    <li>• "I changed jobs a few times" → Which job? When? What happened?</li>
+                    <li>• "I felt sad in 2020" → Everyone did. What specifically happened to YOU?</li>
+                  </ul>
+                </div>
+                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded p-3">
+                  <p className="font-medium">💡 Key Rules for Effective Events:</p>
+                  <ol className="space-y-1 text-muted-foreground mt-1">
+                    <li>1. <strong>Extreme outcomes only</strong> — hospitalization, bankruptcy, divorce, relocation, major loss. Small events don't leave marks on the chart.</li>
+                    <li>2. <strong>Specific year + month</strong> — "2023 Nov" not "a few years ago". Month matters for 流月 matching.</li>
+                    <li>3. <strong>Irreversible change</strong> — events that permanently changed your direction, not minor setbacks.</li>
+                    <li>4. <strong>Cross life areas</strong> — best to have events from DIFFERENT areas (e.g., one health + one wealth + one relationship), not 3 events all about money.</li>
+                  </ol>
+                </div>
+              </div>
+            </details>
 
             {events.map((ev, idx) => (
               <div key={idx} className="border rounded-lg p-4 space-y-3 bg-background">
@@ -463,25 +529,21 @@ export default function ReadingPage() {
                   )}
                 </div>
 
-                {field("WHAT happened?", <>
-                  <textarea value={ev.what} onChange={e => updateEvent(idx, "what", e.target.value)} rows={2} placeholder="Describe the event specifically. e.g., 'I was hospitalized for 7 days due to a severe viral infection.'" className={`${inputCls} resize-y min-h-[60px]`} />
-                  <p className="text-xs text-muted-foreground">Be specific — what exactly occurred?</p>
+                {field("WHAT happened? (be brutally specific)", <>
+                  <textarea value={ev.what} onChange={e => updateEvent(idx, "what", e.target.value)} rows={2} placeholder={"e.g., 'I lost 90% of my savings (~$40K) in crypto futures and had to move back in with my parents.'\n\ne.g., 'I was hospitalized for 7 days with a severe viral infection that shut down my immune system.'\n\ne.g., 'I ended a 2-year relationship where we were discussing marriage — she left without warning.'"} className={`${inputCls} resize-y min-h-[60px]`} />
                 </>)}
 
                 <div className="grid grid-cols-2 gap-3">
-                  {field("WHEN did it happen?", <>
-                    <input type="text" value={ev.when} onChange={e => updateEvent(idx, "when", e.target.value)} placeholder="e.g., 2026 May" className={inputCls} />
-                    <p className="text-xs text-muted-foreground">Year + month is critical for chart matching.</p>
+                  {field("WHEN? (year + month)", <>
+                    <input type="text" value={ev.when} onChange={e => updateEvent(idx, "when", e.target.value)} placeholder="e.g., 2023 November" className={inputCls} />
                   </>)}
-                  {field("WHAT caused it?", <>
-                    <input type="text" value={ev.cause} onChange={e => updateEvent(idx, "cause", e.target.value)} placeholder="e.g., EBV infection from chronic stress" className={inputCls} />
-                    <p className="text-xs text-muted-foreground">Root cause or trigger.</p>
+                  {field("WHAT caused/triggered it?", <>
+                    <input type="text" value={ev.cause} onChange={e => updateEvent(idx, "cause", e.target.value)} placeholder="e.g., Over-leveraged trades during market crash" className={inputCls} />
                   </>)}
                 </div>
 
-                {field("How did it IMPACT you?", <>
-                  <textarea value={ev.impact} onChange={e => updateEvent(idx, "impact", e.target.value)} rows={2} placeholder="How did this change your life, mindset, relationships, or direction? e.g., 'I had to quit my job, lost 5kg, and spent 3 months recovering. It forced me to rethink my entire career path.'" className={`${inputCls} resize-y min-h-[60px]`} />
-                  <p className="text-xs text-muted-foreground">Life changes, psychological shifts, concrete outcomes.</p>
+                {field("How did it IMPACT/CHANGE you? (concrete outcomes)", <>
+                  <textarea value={ev.impact} onChange={e => updateEvent(idx, "impact", e.target.value)} rows={2} placeholder={"e.g., 'I moved back home, lost my independence, took 18 months to recover. I no longer touch leverage or trade emotionally.'\n\ne.g., 'I quit my job, lost 5kg, spent 3 months recovering. It forced me to completely rethink my relationship with work and stress.'"} className={`${inputCls} resize-y min-h-[60px]`} />
                 </>)}
               </div>
             ))}
