@@ -67,6 +67,7 @@ export default function DashboardPage() {
   const [total, setTotal] = useState(0);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [copied, setCopied] = useState<number | null>(null);
+  const [dmIdx, setDMIdx] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Check for saved password on mount
@@ -167,6 +168,38 @@ export default function DashboardPage() {
     if (s.mbti) parts.push(`\nMBTI: ${s.mbti}`);
     if (s.anythingElse) parts.push(`\nOther: ${s.anythingElse}`);
     return parts.join("\n");
+  };
+
+  const buildDM = (s: Submission) => {
+    const interest = s.interestArea === "career" ? "career direction" :
+      s.interestArea === "love" ? "relationships" :
+      s.interestArea === "wealth" ? "money patterns" :
+      s.interestArea === "family" ? "family dynamics" :
+      s.interestArea === "health" ? "health and energy" : "life patterns";
+
+    const lines = [
+      `Hey — Kismet here. I ran your chart for ${s.birthDate}.`,
+      "",
+      `Two things I can see immediately from your chart data:`,
+      "",
+      `1. Your ${interest} architecture shows a specific pattern — [INSERT CHART-ANCHORED CLAIM after calibration]. This isn't generic. I can point to the exact star and palace behind this.`,
+      "",
+      `2. Your ${s.lifeEvent1.substring(0, 60).toLowerCase()}... — this event aligns with [INSERT YEAR/PALACE/TRANSFORMATION after calibration]. The timing isn't random.`,
+      "",
+      `These claims are tied to specific chart elements. If they're wrong, they're falsifiable. If they're right — and I think they will be — you'll know this isn't horoscope generalities.`,
+      "",
+      `Full reading: $29 for your ${s.interestArea === 'full' ? 'complete chart' : interest} analysis. 3 free follow-up questions included. If anything feels Barnum or generic, you don't pay.`,
+      "",
+      `Want the full picture?`,
+      `— Kismet`,
+    ];
+    return lines.join("\n");
+  };
+
+  const copyDM = async (s: Submission, idx: number) => {
+    await navigator.clipboard.writeText(buildDM(s));
+    setDMIdx(idx);
+    setTimeout(() => setDMIdx(null), 2000);
   };
 
   const copyToClipboard = async (s: Submission, idx: number) => {
@@ -471,7 +504,7 @@ export default function DashboardPage() {
                   </>
                 )}
 
-                <div className="flex gap-3 pt-2">
+                <div className="flex flex-wrap gap-3 pt-2">
                   <Button
                     size="sm"
                     onClick={() => copyToClipboard(s, idx)}
@@ -481,11 +514,27 @@ export default function DashboardPage() {
                   </Button>
                   <Button
                     size="sm"
+                    onClick={() => copyDM(s, idx)}
+                    variant={dmIdx === idx ? "default" : "outline"}
+                  >
+                    {dmIdx === idx ? "✓ Copied!" : "📩 Copy DM"}
+                  </Button>
+                  <Button
+                    size="sm"
                     onClick={() => downloadLeadFile(s)}
                     variant="outline"
                   >
                     💾 Save Lead File
                   </Button>
+                </div>
+
+                {/* Pricing reference */}
+                <div className="bg-muted/30 rounded-lg p-3 text-xs space-y-1 mt-2">
+                  <p className="font-medium">💳 Send to lead:</p>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1">
+                    <a href="https://web-nine-zeta-27.vercel.app/pricing" target="_blank" rel="noopener" className="text-primary underline font-medium">Pricing Page ↗</a>
+                    <span className="text-muted-foreground">$29 Single · $59 Bundle · $89 Full · $149 Lifetime</span>
+                  </div>
                 </div>
               </div>
             )}

@@ -85,8 +85,7 @@ async function setupTable(): Promise<{ success: boolean; message: string }> {
       return { success: true, message: "Table 'submissions' is ready" };
     }
 
-    // exec_sql RPC might not exist — try the direct approach
-    // Create table by inserting a test row (Supabase auto-creates the table)
+    // Fallback: create tables by inserting test rows
     const { error } = await supabase.from("submissions").insert({
       submitted_at: new Date().toISOString(),
       birth_date: "_setup_",
