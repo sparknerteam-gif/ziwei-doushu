@@ -43,22 +43,6 @@ const ACCURACY_LABELS: Record<string, string> = {
   unknown: "Unknown",
 };
 
-function mergeSubmissions(local: Submission[], server: Submission[]): Submission[] {
-  const seen = new Set<string>();
-  const merged: Submission[] = [];
-
-  for (const s of [...server, ...local]) {
-    const key = `${s.submittedAt}|${s.email}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      merged.push(s);
-    }
-  }
-
-  merged.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
-  return merged;
-}
-
 export default function DashboardPage() {
   const [password, setPassword] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
@@ -85,9 +69,6 @@ export default function DashboardPage() {
 
     setLoading(true);
     try {
-      const cachedRaw = localStorage.getItem("kismet-local-submissions");
-      const cached: Submission[] = cachedRaw ? JSON.parse(cachedRaw) : [];
-
       // Send password in Authorization header — never appears in URL
       const res = await fetch("/api/submit-form?action=list", {
         headers: {
@@ -107,21 +88,14 @@ export default function DashboardPage() {
 
       const data = await res.json();
       const serverSubs: Submission[] = data.submissions || [];
-      const merged = mergeSubmissions(cached, serverSubs);
-      setSubmissions(merged);
-      setTotal(merged.length);
+      setSubmissions(serverSubs);
+      setTotal(serverSubs.length);
       setAuthenticated(true);
       setAuthError("");
       sessionStorage.setItem("kismet-dash-pw", pwd);
     } catch (err) {
       console.error("Fetch error:", err);
-      const cachedRaw = localStorage.getItem("kismet-local-submissions");
-      if (cachedRaw) {
-        const cached: Submission[] = JSON.parse(cachedRaw);
-        setSubmissions(cached);
-        setTotal(cached.length);
-        setAuthenticated(true);
-      }
+      setAuthError("Failed to load. Please try again.");
     } finally {
       setLoading(false);
     }

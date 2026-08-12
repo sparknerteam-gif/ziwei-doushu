@@ -420,13 +420,6 @@ export default function FormPage() {
                     });
                     if (!res.ok) throw new Error("Failed to submit");
 
-                    try {
-                      const existingRaw = localStorage.getItem("kismet-local-submissions");
-                      const existing = existingRaw ? JSON.parse(existingRaw) : [];
-                      existing.push(payload);
-                      localStorage.setItem("kismet-local-submissions", JSON.stringify(existing));
-                    } catch {}
-
                     setStep("done");
                   } catch (err) {
                     setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
