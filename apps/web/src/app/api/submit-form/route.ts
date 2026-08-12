@@ -357,3 +357,37 @@ export async function GET(request: Request) {
     });
   }
 }
+
+// ── DELETE — clear all submissions (password-protected) ──
+export async function DELETE(request: Request) {
+  try {
+    if (!checkPassword(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    let deleted = 0;
+
+    if (hasSupabase()) {
+      const supabase = getSupabase();
+      const { error } = await supabase
+        .from("submissions")
+        .delete()
+        .gte("id", 0); // delete all rows
+
+      if (error) {
+        console.error("⚠ Delete error:", error.message);
+        return NextResponse.json({ error: "Failed to clear data" }, { status: 500 });
+      }
+      deleted = 1;
+    }
+
+    // Clear memory store too
+    memoryStore.length = 0;
+
+    console.log("🗑️ All submissions cleared");
+    return NextResponse.json({ success: true, message: "All submissions cleared" });
+  } catch (err) {
+    console.error("❌ Delete error:", err);
+    return NextResponse.json({ error: "Failed to clear data" }, { status: 500 });
+  }
+}

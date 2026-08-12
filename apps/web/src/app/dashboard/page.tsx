@@ -108,6 +108,25 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, [authenticated, password]);
 
+  const clearTestData = async () => {
+    const confirmed = window.confirm(
+      "⚠️ This will DELETE ALL submissions permanently.\n\nAre you sure you want to clear all data? This cannot be undone."
+    );
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch("/api/submit-form", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${password}` },
+      });
+      if (!res.ok) throw new Error("Failed to clear");
+      fetchSubmissions();
+    } catch (err) {
+      console.error("Clear error:", err);
+      alert("Failed to clear data. Please try again.");
+    }
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     fetchSubmissions();
@@ -358,9 +377,14 @@ export default function DashboardPage() {
               {total} submission{total !== 1 ? "s" : ""}
             </Badge>
           </div>
-          <Button variant="outline" size="sm" onClick={() => fetchSubmissions()}>
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => fetchSubmissions()}>
+              Refresh
+            </Button>
+            <Button variant="outline" size="sm" onClick={clearTestData} className="text-destructive hover:bg-destructive/10">
+              🗑️ Clear Test Data
+            </Button>
+          </div>
         </div>
       </header>
 
