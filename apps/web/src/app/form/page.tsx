@@ -249,7 +249,7 @@ export default function FormPage() {
               </div>
             )}
 
-            {(formData.birthTimeAccuracy === "part" || formData.birthTimeAccuracy === "approximate" || formData.birthTimeAccuracy === "unknown") && (
+            {(formData.birthTimeAccuracy === "part" || formData.birthTimeAccuracy === "approximate") && (
               <div className="space-y-2">
                 <Label>Which part of the day?</Label>
                 <div className="space-y-2">
