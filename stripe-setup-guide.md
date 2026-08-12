@@ -70,13 +70,13 @@ Replace the `STRIPE_LINKS` object at the top of the file:
 
 ```typescript
 const STRIPE_LINKS = {
-  single: "https://buy.stripe.com/PASTE_YOUR_LINK_HERE",
-  bundle: "https://buy.stripe.com/PASTE_YOUR_LINK_HERE",
-  full: "https://buy.stripe.com/PASTE_YOUR_LINK_HERE",
-  questions5: "https://buy.stripe.com/PASTE_YOUR_LINK_HERE",
-  questions10: "https://buy.stripe.com/PASTE_YOUR_LINK_HERE",
-  questions50: "https://buy.stripe.com/PASTE_YOUR_LINK_HERE",
-  lifetime: "https://buy.stripe.com/PASTE_YOUR_LINK_HERE",
+  single: "https://buy.stripe.com/7sY9ASeRO6Ld3Jb7IJgMw08",
+  bundle: "https://buy.stripe.com/bJefZg6li5H9djL0ghgMw07",
+  full: "https://buy.stripe.com/eVqdR8fVS8Tl0wZfbbgMw06",
+  questions5: "https://buy.stripe.com/8x26oGeROc5x5Rj7IJgMw05",
+  questions10: "https://buy.stripe.com/5kQ5kC9xu6Ld2F75ABgMw04",
+  questions50: "https://buy.stripe.com/cNiaEW7pmc5xfrT7IJgMw03",
+  lifetime: "https://buy.stripe.com/3cIbJ0252d9B3JbfbbgMw01",
 };
 ```
 
@@ -93,7 +93,7 @@ const STRIPE_LINKS = {
 7. Run this command to add it to Vercel:
 
 ```
-! cd C:\紫微斗數 && vercel env add STRIPE_WEBHOOK_SECRET production --value "whsec_YOUR_SECRET"
+! cd C:\紫微斗數 && vercel env add STRIPE_WEBHOOK_SECRET production --value "whsec_oZrhfiDV5XzGxl9tlNu8uosDYqY6KHpu"
 ```
 
 ---

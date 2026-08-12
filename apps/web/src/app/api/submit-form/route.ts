@@ -108,7 +108,26 @@ async function setupTable(): Promise<{ success: boolean; message: string }> {
     // Clean up the test row if insert succeeded
     if (!error) {
       await supabase.from("submissions").delete().eq("email", "_setup_");
-      return { success: true, message: "Table 'submissions' auto-created and ready" };
+
+      // Also create purchases table
+      const { error: purchErr } = await supabase.from("purchases").insert({
+        payment_id: "_setup_" + Date.now(),
+        email: "_setup_@kismet.app",
+        product: "_setup_",
+        amount: 0,
+        questions_included: 0,
+        questions_used: 0,
+        purchased_at: new Date().toISOString(),
+      });
+
+      if (!purchErr) {
+        await supabase.from("purchases").delete().eq("email", "_setup_@kismet.app");
+      }
+
+      return {
+        success: true,
+        message: "Table 'submissions' ready. Purchases table: " + (purchErr ? "needs manual creation" : "ready"),
+      };
     }
 
     return { success: false, message: `Unexpected error: ${error.message}` };

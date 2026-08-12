@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button";
 
 // Stripe Payment Links — replace with your actual Stripe links after creating them
 const STRIPE_LINKS = {
-  single: "https://buy.stripe.com/YOUR_SINGLE_AREA_LINK",
-  bundle: "https://buy.stripe.com/YOUR_BUNDLE_LINK",
-  full: "https://buy.stripe.com/YOUR_FULL_CHART_LINK",
-  questions5: "https://buy.stripe.com/YOUR_5QS_LINK",
-  questions10: "https://buy.stripe.com/YOUR_10QS_LINK",
-  questions50: "https://buy.stripe.com/YOUR_50QS_LINK",
-  lifetime: "https://buy.stripe.com/YOUR_LIFETIME_LINK",
+  single: "https://buy.stripe.com/7sY9ASeRO6Ld3Jb7IJgMw08",
+  bundle: "https://buy.stripe.com/bJefZg6li5H9djL0ghgMw07",
+  full: "https://buy.stripe.com/eVqdR8fVS8Tl0wZfbbgMw06",
+  questions5: "https://buy.stripe.com/8x26oGeROc5x5Rj7IJgMw05",
+  questions10: "https://buy.stripe.com/5kQ5kC9xu6Ld2F75ABgMw04",
+  questions50: "https://buy.stripe.com/cNiaEW7pmc5xfrT7IJgMw03",
+  lifetime: "https://buy.stripe.com/3cIbJ0252d9B3JbfbbgMw01",
 };
 
 const TIERS = [
