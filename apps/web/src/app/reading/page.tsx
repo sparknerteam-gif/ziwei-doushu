@@ -191,11 +191,14 @@ function buildCalibrationPrompt(
   lines.push("## Rules");
   lines.push("- Show your calibration work. Don't just announce the answer — prove it.");
   lines.push("- Quote specific stars, palaces, and pillars from the chart data.");
-  lines.push("- Use professional star archetypes (The Emperor, The Chancellor, The Warrior, The Counselor, The Moon, etc.)");
-  lines.push("- Tone: analytical systems diagnosis. Like a mechanic reading engine codes.");
-  lines.push("- Never predict death, illness, or tragedy.");
+  lines.push("");
+  lines.push("## ⛔ ANTI-BARNUM: Every claim MUST cite chart data. No anchor = delete the claim.");
+  lines.push("");
+  lines.push("## 🌐 WESTERN ADAPTATION: Archetypes (The Sovereign, The Maverick, The Alchemist). No 'destiny/fate' language. Agency framing. Probabilistic, not predictive.");
+  lines.push("");
   lines.push("- If confidence is low due to ambiguous events, say so honestly.");
-  lines.push("- End with: 'This is a pattern analysis for self-reflection, not deterministic prophecy.'");
+  lines.push("- End by asking the person to validate each claim (✅/❌/🤷) for training feedback.");
+  lines.push("- End with: 'This is a pattern architecture analysis for self-reflection, not deterministic prophecy. Your choices matter.'");
 
   return lines.join("\n");
 }
@@ -259,8 +262,51 @@ function addInterpretationTask(lines: string[]) {
   lines.push("### Part A: Chart Summary — Four Pillars, Ming Palace, key stars");
   lines.push("### Part B: Life Script Reading — personality, career, relationships, current decade, 1-2 year insight");
   lines.push("");
-  lines.push("Rules: Be specific. Use star archetypes. Analytical tone. End with the standard disclaimer.");
-  lines.push("The chart data is engine-computed. Trust the math. Interpret the story.");
+  lines.push("---");
+  lines.push("");
+  lines.push("## ⛔ ANTI-BARNUM RULES (MANDATORY)");
+  lines.push("");
+  lines.push("The #1 failure mode of astrology is Barnum statements — vague claims that anyone would agree with. Kismet exists to solve this. Follow these rules or the reading is worthless:");
+  lines.push("");
+  lines.push("1. **Every claim MUST cite specific chart data.** Format: '[Claim] — because [Star] in [Palace] creates [specific dynamic].' If you cannot anchor a claim to a specific star, palace, pillar, or transformation, DELETE that claim.");
+  lines.push("2. **No claim without a chart anchor.** Before writing any interpretation, ask: 'Which chart element proves this?' If the answer is 'none,' skip it.");
+  lines.push("3. **Specific beats general.** 'Your Ming Palace Lian-Zhen + Po-Jun creates friction with authority' NOT 'You sometimes struggle with authority figures.'");
+  lines.push("4. **Event-anchored.** Whenever possible, connect traits to specific years and events: 'Your 2023 event aligns with Tan-Lang Transformation to Obstacle hitting your Wealth Palace.'");
+  lines.push("5. **Falsifiability required.** Every claim must be something the person could say 'No, that's wrong' to. If they couldn't disagree, it's Barnum.");
+  lines.push("6. **Bad example:** 'You have a rich inner world.' ← Barnum. Everyone says yes.");
+  lines.push("   **Good example:** 'Your Core Self has The Moon (Tai-Yin) with The Artist (Wen-Chang) — you process emotions through creative output. When stressed, you withdraw into an elaborate internal landscape that others can't access.' ← Specific, anchored, falsifiable.");
+  lines.push("");
+  lines.push("---");
+  lines.push("");
+  lines.push("## 🌐 WESTERN CULTURAL ADAPTATION");
+  lines.push("");
+  lines.push("This reading is for a Western English-speaking audience. Adapt accordingly:");
+  lines.push("");
+  lines.push("- **Use archetypes, not titles.** 紫微 = The Sovereign (not The Emperor). 貪狼 = The Maverick (not The Wolf). 七殺 = The Vanguard (not The Killer).");
+  lines.push("- **No mystical language.** Never say 'destiny,' 'fate,' 'auspicious,' 'inauspicious.' Say 'pattern,' 'architecture,' 'high-probability window,' 'friction point.'");
+  lines.push("- **Systems thinking.** Frame as operating system analysis: 'Your Core Self is configured with two archetypes that create a specific dynamic...'");
+  lines.push("- **Agency is everything.** End every major section with agency: 'This is the pattern. How you work with it is your design.'");
+  lines.push("- **Probabilistic, not predictive.** 'People with this configuration tend to...' NOT 'You will...'");
+  lines.push("- **Pair every challenge with a strategy.** Don't just name the shadow — name the integration path.");
+  lines.push("- **End with:** 'This is a pattern architecture analysis for self-reflection, not deterministic prophecy. Your choices matter.'");
+  lines.push("");
+  lines.push("---");
+  lines.push("");
+  lines.push("## 📊 FEEDBACK REQUEST (FOR TRAINING)");
+  lines.push("");
+  lines.push("At the end of your reading, ask the person to validate your claims:");
+  lines.push("");
+  lines.push("```");
+  lines.push("📊 Help me get more accurate:");
+  lines.push("For each numbered claim above, reply with:");
+  lines.push("✅ = This is accurate — it describes me or my experience");
+  lines.push("❌ = This is wrong — it doesn't match my reality");
+  lines.push("🤷 = Not sure / doesn't apply");
+  lines.push("");
+  lines.push("Your feedback trains the system. Honest 'no' answers are just as valuable as 'yes.'");
+  lines.push("```");
+  lines.push("");
+  lines.push("The chart data is engine-computed. Trust the math. Interpret the story. Demand feedback.");
 }
 
 function getCurrentDecade(chart: ChartData, bd: BirthData) {

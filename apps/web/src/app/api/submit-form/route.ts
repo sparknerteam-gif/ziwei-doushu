@@ -242,6 +242,31 @@ export async function GET(request: Request) {
       return NextResponse.json(result);
     }
 
+    // ── Feedback collection (public, no auth needed) ──
+    if (url.searchParams.get("action") === "feedback") {
+      const feedbackData = {
+        submittedAt: url.searchParams.get("submittedAt") || new Date().toISOString(),
+        chartRef: url.searchParams.get("chartRef") || "",
+        claim: url.searchParams.get("claim") || "",
+        chartAnchor: url.searchParams.get("chartAnchor") || "",
+        clientFeedback: url.searchParams.get("clientFeedback") || "",
+        readingId: url.searchParams.get("readingId") || "",
+      };
+      console.log("📊 FEEDBACK:", JSON.stringify(feedbackData));
+
+      if (hasSupabase()) {
+        const supabase = getSupabase();
+        const { error } = await supabase.from("feedback").insert(feedbackData);
+        if (error) {
+          console.error("⚠ Feedback save error:", error.message);
+        } else {
+          console.log("✓ Feedback saved to Supabase");
+        }
+      }
+
+      return NextResponse.json({ success: true, message: "Feedback received. Thank you." });
+    }
+
     // ── List submissions (requires password) ──
     if (!checkPassword(request)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
