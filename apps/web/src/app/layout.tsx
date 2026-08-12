@@ -37,10 +37,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </Link>
             <div className="flex items-center gap-4">
               <Link
-                href="/form"
+                href="/pricing"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                Form
+                Pricing
+              </Link>
+              <Link
+                href="/form"
+                className="font-medium text-primary hover:text-primary/80 transition-colors"
+              >
+                Get Reading
               </Link>
             </div>
           </div>

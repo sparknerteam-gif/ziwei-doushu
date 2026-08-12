@@ -1,145 +1,136 @@
 "use client";
 
-import { useState } from "react";
-import { calculateChartSync } from "@/lib/zwds-core";
-import type { ChartData, BirthData } from "@/lib/zwds-core";
-import { TwelvePalaceGrid } from "@/components/chart/TwelvePalaceGrid";
-import { ChartInfo } from "@/components/chart/ChartInfo";
-import { BirthDataForm } from "@/components/forms/BirthDataForm";
-import { FourPillarsDisplay } from "@/components/chart/FourPillarsDisplay";
-import { TransformationList } from "@/components/chart/TransformationList";
-import { DecadeCyclePanel } from "@/components/chart/DecadeCyclePanel";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
-export default function Home() {
-  const [chartData, setChartData] = useState<ChartData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleCalculate = (birthData: BirthData) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const chart = calculateChartSync(birthData);
-      setChartData(chart);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to calculate chart");
-      setChartData(null);
-    }
-    setLoading(false);
-  };
-
+export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold tracking-tight">
-              ✦ Ziwei Doushu
-            </h1>
-            <Badge variant="secondary" className="text-xs">
-              Purple Star Astrology
-            </Badge>
+      <main className="max-w-5xl mx-auto px-4 py-12 space-y-16">
+        {/* Hero */}
+        <div className="text-center space-y-6 py-8">
+          <div className="text-6xl">🔮</div>
+          <h2 className="text-4xl sm:text-5xl font-bold tracking-tight">
+            Your Life Script, Decoded
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Kismet uses an engine-computed 紫微斗數 system to decode your pattern architecture.
+            <br className="hidden sm:block" />
+            Not horoscope generalities. Specific, falsifiable claims about your life.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/form">
+              <Button size="lg" className="px-8">Get Your Free Reading →</Button>
+            </Link>
+            <Link href="/pricing">
+              <Button size="lg" variant="outline" className="px-8">View Pricing</Button>
+            </Link>
           </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>Chart your destiny</span>
+          <p className="text-sm text-muted-foreground">
+            Free preview. 48-hour delivery. No payment required upfront.
+          </p>
+        </div>
+
+        {/* What is Ziwei Doushu */}
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-center">What is 紫微斗數?</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="border rounded-xl p-6 space-y-2">
+              <div className="text-3xl">⭐</div>
+              <h4 className="font-semibold">The Purple Star System</h4>
+              <p className="text-sm text-muted-foreground">
+                紫微斗數 (Ziwei Doushu) is a 1,000-year-old Chinese system that maps your life
+                pattern from your birth time. It charts 14 major stars across 12 palaces,
+                each representing a different life domain.
+              </p>
+            </div>
+            <div className="border rounded-xl p-6 space-y-2">
+              <div className="text-3xl">🧮</div>
+              <h4 className="font-semibold">Engine-Computed</h4>
+              <p className="text-sm text-muted-foreground">
+                Unlike traditional astrologers who read charts &quot;intuitively,&quot; Kismet computes
+                every chart deterministically — Four Pillars, star placements, and transformations
+                are all calculated by a mathematical engine with true solar time correction.
+              </p>
+            </div>
+            <div className="border rounded-xl p-6 space-y-2">
+              <div className="text-3xl">🎯</div>
+              <h4 className="font-semibold">Falsifiable, Not Barnum</h4>
+              <p className="text-sm text-muted-foreground">
+                Most astrology says vague things anyone would agree with. Kismet makes specific
+                claims tied to specific chart elements — claims that can be right or wrong.
+                If it&apos;s wrong, you&apos;ll know. That&apos;s the point.
+              </p>
+            </div>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        {/* Input Form */}
-        <BirthDataForm
-          onCalculate={handleCalculate}
-          loading={loading}
-        />
-
-        {error && (
-          <Card className="mt-4 border-destructive/50 bg-destructive/5 p-4 text-destructive">
-            {error}
-          </Card>
-        )}
-
-        {/* Chart Display */}
-        {chartData && (
-          <div className="mt-6 space-y-6">
-            <ChartInfo chartData={chartData} />
-
-            <Separator />
-
-            {/* Main Grid + Details Tabs */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
-              {/* Left: 12-Palace Grid */}
-              <TwelvePalaceGrid chartData={chartData} />
-
-              {/* Right: Details */}
-              <div className="space-y-4">
-                <FourPillarsDisplay chartData={chartData} />
-
-                <Tabs defaultValue="transformations">
-                  <TabsList className="w-full">
-                    <TabsTrigger value="transformations" className="flex-1">
-                      Transformations
-                    </TabsTrigger>
-                    <TabsTrigger value="decades" className="flex-1">
-                      Decade Cycles
-                    </TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="transformations" className="mt-3">
-                    <TransformationList chartData={chartData} />
-                  </TabsContent>
-                  <TabsContent value="decades" className="mt-3">
-                    <DecadeCyclePanel chartData={chartData} />
-                  </TabsContent>
-                </Tabs>
+        {/* How it works */}
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-center">How It Works</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { num: "1", title: "Share Your Birth Data", desc: "Date, city, and birth time. The more precise, the more accurate your chart." },
+              { num: "2", title: "We Calibrate Your Chart", desc: "Your past life events verify the chart — like GPS locking onto your coordinates." },
+              { num: "3", title: "Receive Your Reading", desc: "A specific, chart-anchored analysis delivered to your DM or email within 48 hours." },
+            ].map((s) => (
+              <div key={s.num} className="border rounded-xl p-6 space-y-3 text-center">
+                <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold mx-auto">
+                  {s.num}
+                </div>
+                <h4 className="font-semibold">{s.title}</h4>
+                <p className="text-sm text-muted-foreground">{s.desc}</p>
               </div>
-            </div>
+            ))}
+          </div>
+        </div>
 
-            {/* Stars Summary */}
-            <Card className="p-4">
-              <h3 className="text-sm font-semibold mb-3">All Stars by Palace</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {chartData.palaces.map((palace) => (
-                  <div key={palace.index} className="text-sm">
-                    <span className="font-medium text-muted-foreground">
-                      {palace.name.charAt(0).toUpperCase() + palace.name.slice(1)}:
-                    </span>{" "}
-                    {palace.stars.length > 0
-                      ? palace.stars.map((s) => s.nameEn).join(", ")
-                      : "—"}
-                  </div>
-                ))}
+        {/* The 6 life directions */}
+        <div className="space-y-6">
+          <h3 className="text-2xl font-bold text-center">Six Life Directions</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {[
+              { emoji: "💰", name: "Wealth Architecture", desc: "Money patterns & risk profile" },
+              { emoji: "👥", name: "Social & Community", desc: "Friendships & network dynamics" },
+              { emoji: "💕", name: "Love & Partnership", desc: "Relationship patterns" },
+              { emoji: "🏠", name: "Roots & Origin", desc: "Family & foundation" },
+              { emoji: "💼", name: "Vocation & Calling", desc: "Career direction" },
+              { emoji: "🧬", name: "Core Architecture", desc: "Personality & operating system" },
+            ].map((d) => (
+              <div key={d.name} className="border rounded-lg p-4 text-sm flex items-center gap-3">
+                <span className="text-2xl">{d.emoji}</span>
+                <div>
+                  <span className="font-medium">{d.name}</span>
+                  <p className="text-muted-foreground text-xs">{d.desc}</p>
+                </div>
               </div>
-            </Card>
+            ))}
           </div>
-        )}
+        </div>
 
-        {/* Empty state */}
-        {!chartData && !error && !loading && (
-          <div className="mt-16 text-center text-muted-foreground">
-            <div className="text-6xl mb-4">✦</div>
-            <p className="text-lg">Enter your birth data above to generate your Ziwei Doushu chart.</p>
-            <p className="text-sm mt-2">
-              The 12-palace chart reveals insights about destiny, career, relationships, and more.
-            </p>
-          </div>
-        )}
+        {/* Risk reversal */}
+        <div className="bg-muted/30 rounded-xl p-8 text-center space-y-3">
+          <p className="text-xl font-semibold">🔒 If Anything Feels Generic, You Don&apos;t Pay</p>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            Every claim is anchored to specific chart data. If a claim can&apos;t be tied to a star,
+            palace, pillar, or transformation — it doesn&apos;t belong in your reading.
+          </p>
+        </div>
 
-        {loading && (
-          <div className="mt-16 text-center text-muted-foreground">
-            <div className="text-4xl mb-4 animate-pulse">✦</div>
-            <p className="text-lg">Calculating your birth chart...</p>
-          </div>
-        )}
+        {/* Final CTA */}
+        <div className="text-center space-y-4 py-8">
+          <h3 className="text-3xl font-bold">Ready to Decode Your Script?</h3>
+          <Link href="/form">
+            <Button size="lg" className="px-10">Get Your Free Reading →</Button>
+          </Link>
+          <p className="text-sm text-muted-foreground">
+            Free. Private. Pattern analysis, not fortune-telling.
+          </p>
+        </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t mt-auto py-4 text-center text-xs text-muted-foreground">
-        Ziwei Doushu (紫微斗數) — Purple Star Astrology. For guidance and self-reflection only.
+      <footer className="border-t py-6 text-center text-xs text-muted-foreground">
+        Kismet — Life Script Decoder. For guidance and self-reflection only.
       </footer>
     </div>
   );
